@@ -1,0 +1,50 @@
+name: Backend dev workflow
+
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - 'backend/**'
+  pull_request:
+    branches:
+      - dev
+    paths:
+      - 'backend/**'
+
+jobs:
+  format-lint-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies (Poetry)
+        run: |
+          cd backend
+          curl -sSL https://install.python-poetry.org | python3 -
+          export PATH="$HOME/.local/bin:$PATH"
+          poetry install
+
+      - name: Run formatter (black)
+        run: |
+          cd backend
+          poetry run black --check .
+
+      - name: Run linter (ruff)
+        run: |
+          cd backend
+          poetry run ruff check .
+      
+      - name: Run tests
+        run: |
+          cd backend
+          poetry run pytest --maxfail=1 --disable-warnings -q
+
+    
