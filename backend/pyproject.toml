@@ -7,7 +7,7 @@ authors = [
 ]
 license = {text = "Apache License 2.0"}
 readme = "README.md"
-requires-python = "^3.11"
+requires-python = ">=3.11"
 dependencies = [
     "fastapi (>=0.118.2,<0.119.0)",
     "uvicorn (>=0.37.0,<0.38.0)",
