@@ -494,7 +494,7 @@ def list_cmd(
             return
 
         table = Table(title=f"Notes ({len(notes)} found)", show_header=True)
-        table.add_column("ID", style="cyan", width=12)
+        table.add_column("ID", style="cyan")
         table.add_column("Title", style="bold")
         table.add_column("Tags", style="dim")
         table.add_column("Created", style="dim")
@@ -503,7 +503,7 @@ def list_cmd(
 
         for note in notes:
             table.add_row(
-                note.id[:8] + "...",
+                note.id,
                 truncate(note.title, 40),
                 ", ".join(note.tags[:3]) + ("..." if len(note.tags) > 3 else ""),
                 format_datetime(note.created_at).split()[0],
