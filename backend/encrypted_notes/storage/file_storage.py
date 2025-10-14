@@ -110,7 +110,7 @@ class FileStorage(Storage[NoteMeta]):
         if item.id in metadata:
             raise ValueError(f"Note with id {item.id} alread exists")
 
-        metadata[item.id] = item.model_dump(mode="json")
+        metadata[item.id] = item.model_dump(mode="python")
         self._save_metadata(metadata)
 
         return item
@@ -231,7 +231,9 @@ class FileStorage(Storage[NoteMeta]):
         metadata = self._load_metadata()
         if note_id in metadata:
             metadata[note_id]["size_bytes"] = len(encrypted_data)
-            metadata[note_id]["content_hash"] = hashlib.sha256(encrypted_data)
+            metadata[note_id]["content_hash"] = hashlib.sha256(
+                encrypted_data
+            ).hexdigest()
             self._save_metadata(metadata)
 
     def load_encrypted_content(self, note_id: str) -> bytes:
@@ -247,7 +249,6 @@ class FileStorage(Storage[NoteMeta]):
         Raises:
             FileNotFoundError: If content file doesn't exist
         """
-
         data_file = self._get_data_file(note_id)
 
         if not data_file.exists():
@@ -280,7 +281,7 @@ class FileStorage(Storage[NoteMeta]):
 
         export_data = {
             "version": "1.0",
-            "metadata": note.model_dump(mode="json"),
+            "metadata": note.model_dump(mode="python"),
             "content": encrypted_content.hex(),
         }
 

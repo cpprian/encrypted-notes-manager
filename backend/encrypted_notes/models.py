@@ -404,7 +404,8 @@ class NoteStatistics(BaseModel):
     active_notes: int
     archived_notes: int
     deleted_notes: int
-    favorite_notes: int
+    total_size_bytes: int
+    favorite_count: int
     total_tags: int
     most_used_tags: list[tuple[str, int]] = Field(description="List of (tag, count)")
 
