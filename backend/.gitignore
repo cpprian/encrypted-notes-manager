@@ -32,3 +32,4 @@ archive.zip
 .env
 data/
 */.ruff_cache/
+encrypted_notes/test_core/
