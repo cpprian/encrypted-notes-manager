@@ -32,6 +32,8 @@ from rich.table import Table
 from rich.prompt import Prompt, Confirm
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
+from encrypted_notes.json import EnumJSONDecoder
+
 from .core import (
     NoteSession,
     create_note,
@@ -85,7 +87,7 @@ class Config:
         if CONFIG_FILE.exists():
             try:
                 with open(CONFIG_FILE, "r") as f:
-                    data = json.load(f)
+                    data = json.load(f, cls=EnumJSONDecoder)
                     config.salt_hex = data.get("salt_hex")
                     config.iterations = data.get("iterations", 100_000)
 
@@ -123,7 +125,7 @@ class Config:
         """
         Check if configuration is initialized.
         """
-        print(CONFIG_FILE.exists(), self.salt_hex is not None)
+
         return CONFIG_FILE.exists() and self.salt_hex is not None
 
 

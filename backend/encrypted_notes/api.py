@@ -25,6 +25,8 @@ from fastapi import (
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from encrypted_notes.json import EnumJSONDecoder
+
 from .core import (
     NoteSession,
     create_note as core_create_note,
@@ -82,7 +84,7 @@ def load_config():
         )
 
     with open(CONFIG_FILE, "r") as f:
-        config = json.load(f)
+        config = json.load(f, cls=EnumJSONDecoder)
 
     app_state["salt_hex"] = config.get("salt_hex")
     app_state["iterations"] = config.get("iterations", 100_000)
