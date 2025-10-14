@@ -30,3 +30,6 @@ archive.zip
 .DS_Store
 
 .env
+data/
+.ruff_cache/
+test_core/
