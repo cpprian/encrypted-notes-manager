@@ -129,7 +129,6 @@ def create_note(session: NoteSession, note_data: NoteCreate) -> NoteDetail:
         encrypted_content = encrypt_text(session.key, note_data.content)
 
         content_hash = hashlib.sha256(encrypted_content).hexdigest()
-        print("Expected hash:", content_hash)
 
         now = datetime.now(timezone.utc)
         note_meta = NoteMeta(
@@ -192,10 +191,6 @@ def read_note(session: NoteSession, note_id: str) -> NoteDetail:
             raise InvalidPasswordError("Incorrect password or corrupted data")
 
         if note_meta.content_hash:
-            print("Expected hash type:", type(note_meta.content_hash))
-            print("Expected hash value:", note_meta.content_hash)
-            print("Actual hash:  ", hashlib.sha256(encrypted_content).hexdigest())
-            print("Encrypted content:", encrypted_content[:32], "...")
             actual_hash = hashlib.sha256(encrypted_content).hexdigest()
             if actual_hash != note_meta.content_hash:
                 raise NoteOperationError("Content integrity check failed")
@@ -327,7 +322,7 @@ def restore_note(session: NoteSession, note_id: str) -> NoteRead:
     return NoteRead(**updated.model_dump())
 
 
-def archived_note(session: NoteSession, note_id: str) -> NoteRead:
+def archive_note(session: NoteSession, note_id: str) -> NoteRead:
     """
     Archive a note.
 
@@ -366,7 +361,7 @@ def list_notes(
 
     if filter:
         skip = (filter.page - 1) * filter.page_size
-        notes = session.storage.list(filter=filter, skip=skip, limit=filter.page.size)
+        notes = session.storage.list(filter=filter, skip=skip, limit=filter.page_size)
     else:
         notes = session.storage.list()
 
@@ -401,14 +396,14 @@ def search_notes(
 
         for note in all_notes:
             try:
-                detail = read_note(session, note.id())
+                detail = read_note(session, note.id)
                 if query_lower in detail.content.lower():
                     if note.id not in [r.id for r in results]:
                         content_matches.append(note)
             except Exception:
                 continue
 
-            results.extend(content_matches)
+        results.extend(content_matches)
 
     return [NoteRead(**note.model_dump()) for note in results]
 
