@@ -450,3 +450,21 @@ class AuthResponse(BaseModel):
     message: str
     session_id: Optional[str] = None
     expires_at: Optional[datetime] = None
+
+
+class MessageResponse(BaseModel):
+    """
+    Generic message response.
+    """
+
+    message: str
+    success: bool = True
+
+
+class ErrorResponse(BaseModel):
+    """
+    Error response.
+    """
+
+    detail: str
+    error_code: Optional[str] = None
