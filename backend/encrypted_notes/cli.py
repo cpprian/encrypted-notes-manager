@@ -32,6 +32,8 @@ from rich.table import Table
 from rich.prompt import Prompt, Confirm
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
+from encrypted_notes.json import EnumJSONDecoder
+
 from .core import (
     NoteSession,
     create_note,
@@ -58,7 +60,7 @@ CONFIG_FILE = DEFAULT_CONFIG_DIR / "config.json"
 
 console = Console()
 app = typer.Typer(
-    name="encrypted-notes",
+    name="encrypted-notes-manager",
     help="Secure encrypted notes manager with password-based encryption",
     add_completion=False,
 )
@@ -85,7 +87,7 @@ class Config:
         if CONFIG_FILE.exists():
             try:
                 with open(CONFIG_FILE, "r") as f:
-                    data = json.load(f)
+                    data = json.load(f, cls=EnumJSONDecoder)
                     config.salt_hex = data.get("salt_hex")
                     config.iterations = data.get("iterations", 100_000)
 
@@ -123,6 +125,7 @@ class Config:
         """
         Check if configuration is initialized.
         """
+
         return CONFIG_FILE.exists() and self.salt_hex is not None
 
 
@@ -196,7 +199,7 @@ def open_editor(initial_content: str = "") -> str:
     Open text editor and return edited content.
     """
 
-    editor = os.environ.get("EDITOR", "nano")
+    editor = os.environ.get("EDITOR", "vim")
 
     with tempfile.NamedTemporaryFile(mode="w+", suffix=".txt", delete=False) as tf:
         temp_path = Path(tf.name)
@@ -248,10 +251,10 @@ def init(
     Initialize encrypted notes configuration.
 
     Creates configuration directory, generates encryption salt,
-    and sets up storage.
+    and sets up storage. Deletes existing data in storage directory if it exists.
     """
 
-    config = Config()
+    config = get_config()
 
     if config.is_initialized() and not force:
         console.print(
@@ -263,6 +266,16 @@ def init(
         config.storage_dir = storage_dir.absolute()
 
     config.config_dir.mkdir(parents=True, exist_ok=True)
+
+    if config.storage_dir.exists():
+        for item in config.storage_dir.iterdir():
+            if item.is_dir():
+                for sub_item in item.rglob("*"):
+                    sub_item.unlink()
+                item.rmdir()
+            else:
+                item.unlink()
+
     config.storage_dir.mkdir(parents=True, exist_ok=True)
 
     console.print("[bold]Set up master password:[/bold]")
@@ -481,7 +494,7 @@ def list_cmd(
             return
 
         table = Table(title=f"Notes ({len(notes)} found)", show_header=True)
-        table.add_column("ID", style="cyan", width=12)
+        table.add_column("ID", style="cyan")
         table.add_column("Title", style="bold")
         table.add_column("Tags", style="dim")
         table.add_column("Created", style="dim")
@@ -490,7 +503,7 @@ def list_cmd(
 
         for note in notes:
             table.add_row(
-                note.id[:8] + "...",
+                note.id,
                 truncate(note.title, 40),
                 ", ".join(note.tags[:3]) + ("..." if len(note.tags) > 3 else ""),
                 format_datetime(note.created_at).split()[0],

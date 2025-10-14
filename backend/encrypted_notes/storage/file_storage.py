@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Optional
 from uuid import uuid4
 
+from encrypted_notes.json import EnumJSONDecoder, EnumJSONEncoder
 from encrypted_notes.models import NoteFilter, NoteMeta
 
 from .storage import Storage
@@ -77,7 +78,7 @@ class FileStorage(Storage[NoteMeta]):
         """
 
         with open(self.metadata_file, "r", encoding="utf-8") as f:
-            return json.load(f)
+            return json.load(f, cls=EnumJSONDecoder)
 
     def _save_metadata(self, metadata: dict[str, dict]) -> None:
         """
@@ -87,7 +88,7 @@ class FileStorage(Storage[NoteMeta]):
         temp_file = self.metadata_file.with_suffix(".tmp")
 
         with open(temp_file, "w", encoding="utf-8") as f:
-            json.dump(metadata, f, indent=2, default=str)
+            json.dump(metadata, f, indent=2, cls=EnumJSONEncoder)
 
         self._secure_file(temp_file)
 
@@ -311,7 +312,7 @@ class FileStorage(Storage[NoteMeta]):
             raise FileNotFoundError(f"Import file not found: {import_path}")
 
         with open(import_path, "r", encoding="utf-8") as f:
-            export_data = json.load(f)
+            export_data = json.load(f, cls=EnumJSONDecoder)
 
         note = NoteMeta(**export_data["metadata"])
 
