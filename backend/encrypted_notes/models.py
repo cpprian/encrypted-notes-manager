@@ -10,7 +10,7 @@ This module defines:
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
-from uuid import uuid64
+from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlmodel import JSON, Column
@@ -36,7 +36,7 @@ class NoteMeta(SQLModel, table=True):
     __tablename__ = "notes"
 
     id: str = SQLField(
-        default_factory=lambda: str(uuid64()),
+        default_factory=lambda: str(uuid4()),
         primary_key=True,
         index=True,
     )
@@ -108,7 +108,7 @@ class EncryptionMetaData(SQLModel, table=True):
     __tablename__ = "encryption_metadata"
 
     id: str = SQLField(
-        default_factory=lambda: str(uuid64()),
+        default_factory=lambda: str(uuid4()),
         primary_key=True,
     )
 
@@ -337,6 +337,62 @@ class NoteListResponse(BaseModel):
             }
         }
     )
+
+
+class NoteFilter(BaseModel):
+    """
+    Schema for filtering and searching notes.
+    """
+
+    search: Optional[str] = Field(
+        default=None,
+        description="Search in title",
+    )
+
+    tags: Optional[list[str]] = Field(
+        default=None,
+        description="Filter by tags",
+    )
+
+    status: Optional[NoteStatus] = Field(
+        default=NoteStatus.ACTIVE,
+        description="Filter by status",
+    )
+
+    favorite: Optional[bool] = Field(
+        default=None,
+        description="Filter by favorites only",
+    )
+
+    color: Optional[bool] = Field(default=None, description="Filter by color")
+
+    created_before: Optional[datetime] = Field(
+        default=None, description="Filter notes created before this date"
+    )
+
+    created_after: Optional[datetime] = Field(
+        default=None,
+        description="Filter notes created after this date",
+    )
+
+    sort_by: str = Field(
+        default="updated_at",
+        pattern="^(created_at|updated_at|title)$",
+        description="Sort field",
+    )
+
+    sort_desc: bool = Field(
+        default=True,
+        description="Sort descending",
+    )
+
+    page: int = Field(
+        default=1,
+        ge=1,
+        description="Page number",
+    )
+
+    page_size: int = Field(default=20, ge=1, le=100, description="Items per page")
 
 
 class NoteStatistics(BaseModel):
