@@ -22,7 +22,7 @@ from .errors import (
     InvalidPasswordError,
     KeyDerivationError,
     NoteNotFoundError,
-    NoteOperationsError,
+    NoteOperationError,
 )
 from .models import (
     NoteCreate,
@@ -122,7 +122,6 @@ def create_note(session: NoteSession, note_data: NoteCreate) -> NoteDetail:
         EncryptionError: If encryption fails
         NoteOperationError: If storage operation fails
     """
-
     try:
         note_id = str(uuid4())
         filename = f"{note_id}.bin"
@@ -130,6 +129,7 @@ def create_note(session: NoteSession, note_data: NoteCreate) -> NoteDetail:
         encrypted_content = encrypt_text(session.key, note_data.content)
 
         content_hash = hashlib.sha256(encrypted_content).hexdigest()
+        print("Expected hash:", content_hash)
 
         now = datetime.now(timezone.utc)
         note_meta = NoteMeta(
@@ -152,10 +152,11 @@ def create_note(session: NoteSession, note_data: NoteCreate) -> NoteDetail:
             session.storage.save_encrypted_content(note_id, encrypted_content)
 
         return NoteDetail(**saved_meta.model_dump(), content=note_data.content)
+
     except EncryptionError:
         raise
     except Exception as e:
-        raise NoteOperationsError(f"Failed to create note: {e}") from e
+        raise NoteOperationError(f"Failed to create note: {e}") from e
 
 
 def read_note(session: NoteSession, note_id: str) -> NoteDetail:
@@ -170,7 +171,7 @@ def read_note(session: NoteSession, note_id: str) -> NoteDetail:
         Decrypted note with full content
 
     Raises:
-        NoteNotfoundError: If note doesn't exist
+        NoteNotFoundError: If note doesn't exist
         DecryptionError: If decryption fails (wrong password)
         InvalidPasswordError: If password is incorrect
     """
@@ -183,7 +184,7 @@ def read_note(session: NoteSession, note_id: str) -> NoteDetail:
         if isinstance(session.storage, FileStorage):
             encrypted_content = session.storage.load_encrypted_content(note_id)
         else:
-            raise NoteOperationsError("Storage type doesn't support content loading")
+            raise NoteOperationError("Storage type doesn't support content loading")
 
         try:
             decrypted_content = decrypt_text(session.key, encrypted_content)
@@ -191,15 +192,20 @@ def read_note(session: NoteSession, note_id: str) -> NoteDetail:
             raise InvalidPasswordError("Incorrect password or corrupted data")
 
         if note_meta.content_hash:
+            print("Expected hash type:", type(note_meta.content_hash))
+            print("Expected hash value:", note_meta.content_hash)
+            print("Actual hash:  ", hashlib.sha256(encrypted_content).hexdigest())
+            print("Encrypted content:", encrypted_content[:32], "...")
             actual_hash = hashlib.sha256(encrypted_content).hexdigest()
             if actual_hash != note_meta.content_hash:
-                raise NoteOperationsError("Content integrity check failed")
+                raise NoteOperationError("Content integrity check failed")
 
         return NoteDetail(**note_meta.model_dump(), content=decrypted_content)
+
     except (DecryptionError, InvalidPasswordError):
         raise
     except Exception as e:
-        raise NoteOperationsError(f"Failed to read note: {e}") from e
+        raise NoteOperationError(f"Failed to read note: {e}") from e
 
 
 def update_note(
@@ -263,7 +269,7 @@ def update_note(
 
         return NoteDetail(**update_meta.model_dump(), content=decrypted_content)
     except Exception as e:
-        raise NoteOperationsError(f"Failed to update note: {e}") from e
+        raise NoteOperationError(f"Failed to update note: {e}") from e
 
 
 def delete_note(session: NoteSession, note_id: str, permament: bool = False) -> None:
@@ -292,7 +298,7 @@ def delete_note(session: NoteSession, note_id: str, permament: bool = False) -> 
             note_meta.updated_at = datetime.now(timezone.utc)
             session.storage.update(note_meta)
     except Exception as e:
-        raise NoteOperationsError(f"Failed to delete note: {e}") from e
+        raise NoteOperationError(f"Failed to delete note: {e}") from e
 
 
 def restore_note(session: NoteSession, note_id: str) -> NoteRead:
@@ -341,7 +347,7 @@ def archived_note(session: NoteSession, note_id: str) -> NoteRead:
     note_meta.updated_at = datetime.now(timezone.utc)
     updated = session.storage.update(note_meta)
 
-    return NoteRead(**updated.model_dump)
+    return NoteRead(**updated.model_dump())
 
 
 def list_notes(
@@ -481,7 +487,7 @@ def export_note_to_file(
     """
 
     if not isinstance(session.storage, FileStorage):
-        raise NoteOperationsError("Export only supported with FileStorage")
+        raise NoteOperationError("Export only supported with FileStorage")
 
     if not session.storage.get(note_id):
         raise NoteNotFoundError(f"Note with id {note_id} not found")
@@ -505,8 +511,89 @@ def import_note_from_file(
     """
 
     if not isinstance(session.storage, FileStorage):
-        raise NoteOperationsError("Import only supported with FileStorage")
+        raise NoteOperationError("Import only supported with FileStorage")
 
     imported_meta = session.storage.import_note(import_path, new_id=new_id)
 
     return read_note(session, imported_meta.id)
+
+
+def change_password(
+    session: NoteSession,
+    new_password: str,
+    progress_callback: Optional[callable] = None,
+) -> NoteSession:
+    """
+    Change the master password by re-encrypting all notes.
+
+    Args:
+        session: Current active session
+        new_password: New master password
+        progress_callback: Optional callback for progress
+
+    Returns:
+        New session with new password
+
+    Raises:
+        NoteOperationError: If re-encryption fails
+    """
+
+    all_notes = session.storage.list(limit=999999)
+    total = len(all_notes)
+
+    new_salt = generate_salt()
+    new_session = NoteSession(
+        session.storage, new_password, salt=new_salt, iterations=session.iterations
+    )
+
+    for i, note_meta in enumerate(all_notes):
+        try:
+            if isinstance(session.storage, FileStorage):
+                encrypted_old = session.storage.load_encrypted_content(note_meta.id)
+                decrypted = decrypt_text(session.key, encrypted_old)
+
+                encrypted_new = encrypt_text(new_session.key, decrypted)
+
+                session.storage.save_encrypted_content(note_meta.id, encrypted_new)
+
+                note_meta.content_hash = hashlib.sha256(encrypted_new).hexdigest()
+                note_meta.size_bytes = len(encrypted_new)
+
+            if progress_callback:
+                progress_callback(i + 1, total)
+        except Exception as e:
+            raise NoteOperationError(
+                f"Failed to re-encrypt note {note_meta.id}: {e}"
+            ) from e
+
+    return new_session
+
+
+def verify_password(storage: Storage[NoteMeta], password: str, salt_hex: str) -> bool:
+    """
+    Verify if a password is correct by attempting to create a session.
+
+    Args:
+        storage: Storage backend
+        password: Password to verify
+        salt_hex: Hex-encoded salt
+
+    Returns:
+        True if password is correct
+    """
+
+    try:
+        session = NoteSession.from_salt_hex(storage, password, salt_hex)
+
+        notes = storage.list(limit=1)
+        if notes and isinstance(storage, FileStorage):
+            try:
+                encrypted = storage.load_encrypted_content(notes[0].id)
+                decrypt_text(session.key, encrypted)
+                return True
+            except DecryptionError:
+                return False
+
+        return True  # No notes to verify against
+    except Exception:
+        return False

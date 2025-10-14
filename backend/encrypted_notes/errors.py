@@ -28,7 +28,7 @@ class InvalidPasswordError(Exception):
     pass
 
 
-class NoteOperationsError(Exception):
+class NoteOperationError(Exception):
     """Base exception for note operations."""
 
     pass
