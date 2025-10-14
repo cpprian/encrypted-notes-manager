@@ -5,7 +5,7 @@ import shutil
 from encrypted_notes.storage.file_storage import FileStorage
 from encrypted_notes.core import (
     NoteSession,
-    archived_note,
+    archive_note,
     create_note,
     delete_note,
     export_note_to_file,
@@ -93,7 +93,7 @@ def test_statistics(test_session):
 
 def test_archive_restore(test_session):
     created_note = test_create_note(test_session)
-    archived = archived_note(test_session, created_note.id)
+    archived = archive_note(test_session, created_note.id)
     assert archived.status == "archived"
     restored = restore_note(test_session, created_note.id)
     assert restored.status == "active"
