@@ -1,32 +1,28 @@
-[project]
+[tool.poetry]
 name = "encrypted-notes"
 version = "0.1.0"
 description = "A secure notes manager that encrypts all notes locally using AES/Fernet. Includes both a CLI and REST API for creating, viewing, and managing encrypted notes."
-authors = [
-    {name = "cyprian.szczepanski@proton.me"}
-]
-license = {text = "Apache License 2.0"}
+authors = [ "cyprian.szczepanski@proton.me" ]
+license = "Apache License 2.0"
 readme = "README.md"
-requires-python = ">=3.11"
-dependencies = [
-    "fastapi (>=0.118.2,<0.119.0)",
-    "uvicorn (>=0.37.0,<0.38.0)",
-    "cryptography (>=46.0.2,<47.0.0)",
-    "typer (>=0.19.2,<0.20.0)",
-    "sqlmodel (>=0.0.27,<0.0.28)",
-    "python-dotenv (>=1.1.1,<2.0.0)",
-    "pydantic (>=2.12.0,<3.0.0)"
-]
+
+[tool.poetry.dependencies]
+python = ">=3.11,<4.0"
+fastapi = ">=0.118.2,<0.119.0"
+uvicorn = ">=0.37.0,<0.38.0"
+cryptography = ">=46.0.2,<47.0.0"
+typer = ">=0.19.2,<0.20.0"
+sqlmodel = ">=0.0.27,<0.0.28"
+python-dotenv = ">=1.1.1,<2.0.0"
+pydantic = ">=2.12.0,<3.0.0"
 
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-[dependency-groups]
-dev = [
-    "pytest (>=8.4.2,<9.0.0)",
-    "black (>=25.9.0,<26.0.0)",
-    "ruff (>=0.14.0,<0.15.0)",
-    "pre-commit (>=4.3.0,<5.0.0)"
-]
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8.4.2,<9.0.0"
+black = ">=25.9.0,<26.0.0"
+ruff = ">=0.14.0,<0.15.0"
+pre-commit = ">=4.3.0,<5.0.0"
