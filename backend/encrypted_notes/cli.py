@@ -58,7 +58,7 @@ CONFIG_FILE = DEFAULT_CONFIG_DIR / "config.json"
 
 console = Console()
 app = typer.Typer(
-    name="encrypted-notes",
+    name="encrypted-notes-manager",
     help="Secure encrypted notes manager with password-based encryption",
     add_completion=False,
 )
@@ -123,6 +123,7 @@ class Config:
         """
         Check if configuration is initialized.
         """
+        print(CONFIG_FILE.exists(), self.salt_hex is not None)
         return CONFIG_FILE.exists() and self.salt_hex is not None
 
 
@@ -196,7 +197,7 @@ def open_editor(initial_content: str = "") -> str:
     Open text editor and return edited content.
     """
 
-    editor = os.environ.get("EDITOR", "nano")
+    editor = os.environ.get("EDITOR", "vim")
 
     with tempfile.NamedTemporaryFile(mode="w+", suffix=".txt", delete=False) as tf:
         temp_path = Path(tf.name)
@@ -248,10 +249,10 @@ def init(
     Initialize encrypted notes configuration.
 
     Creates configuration directory, generates encryption salt,
-    and sets up storage.
+    and sets up storage. Deletes existing data in storage directory if it exists.
     """
 
-    config = Config()
+    config = get_config()
 
     if config.is_initialized() and not force:
         console.print(
@@ -263,6 +264,16 @@ def init(
         config.storage_dir = storage_dir.absolute()
 
     config.config_dir.mkdir(parents=True, exist_ok=True)
+
+    if config.storage_dir.exists():
+        for item in config.storage_dir.iterdir():
+            if item.is_dir():
+                for sub_item in item.rglob("*"):
+                    sub_item.unlink()
+                item.rmdir()
+            else:
+                item.unlink()
+
     config.storage_dir.mkdir(parents=True, exist_ok=True)
 
     console.print("[bold]Set up master password:[/bold]")
