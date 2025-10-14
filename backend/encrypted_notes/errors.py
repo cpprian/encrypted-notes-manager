@@ -1,3 +1,6 @@
+from fastapi import HTTPException, status
+
+
 class EncryptionError(Exception):
     """Base class for encryption-related errors."""
 
@@ -32,3 +35,14 @@ class NoteOperationError(Exception):
     """Base exception for note operations."""
 
     pass
+
+
+class AuthError(HTTPException):
+    """Authentication error."""
+
+    def __init__(self, detail: str = "Authentication failed"):
+        super().__init__(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=detail,
+            headers={"WWW-Authenticate": "X-Master-Password"},
+        )
