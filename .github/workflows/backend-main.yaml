@@ -47,10 +47,10 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Log in to the Container registry
-        uses: docker/login-action@v3
+      - name: Build and push Docker images
+        id: push
+        uses: docker/build-push-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN }}
-    
+          context: ./backend
+          push: true
+          tags: ghcr.io/cpprian/encrypted-notes-manager-backend
