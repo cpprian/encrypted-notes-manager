@@ -53,25 +53,4 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_TOKEN }}
-
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
-        with:
-          images: |
-            cpprian/encrypted-notes-manager-backend
-            ghcr.io/cpprian/encrypted-notes-manager-backend
-      - name: Build and push Docker images
-        id: push
-        uses: docker/build-push-action@v3
-        with:
-          context: ./backend
-          push: true
-
-      - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v3
-        with:
-          subject-name: ghcr.io/cpprian/encrypted-notes-manager-backend
-          subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
     
