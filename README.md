@@ -40,7 +40,7 @@ poetry shell
 
 ## 🚀 Quick Start
 
-![CLI Help](docs/cli_help.png)
+![CLI Help](backend/docs/cli_help.png)
 
 ### 1. Initialize the application
 
@@ -65,13 +65,13 @@ This creates:
 
 ```bash
 # Opens your default editor ($EDITOR)
-python3 -m encrypted_notes.cli.py add --title "My First Note"
+python3 -m encrypted_notes.cli add --title "My First Note"
 
 # Or provide content inline
-python3 -m encrypted_notes.cli.py add --title "Quick Note" --content "Secret information"
+python3 -m encrypted_notes.cli add --title "Quick Note" --content "Secret information"
 
 # With tags and as favorite
-python3 -m encrypted_notes.cli.py add \
+python3 -m encrypted_notes.cli add \
   --title "Project Ideas" \
   --tag project \
   --tag ideas \
@@ -79,21 +79,21 @@ python3 -m encrypted_notes.cli.py add \
   --color "#FF5733"
 ```
 
-![CLI Add](docs/cli_add.png)
+![CLI Add](backend/docs/cli_add.png)
 
 ### 3. View notes
 
 ```bash
 # List all active notes
-python3 -m encrypted_notes.cli.py list
+python3 -m encrypted_notes.cli list
 
 # View a specific note by ID
-python3 -m encrypted_notes.cli.py view <note-id>
+python3 -m encrypted_notes.cli view <note-id>
 ```
 
-![CLI List](docs/cli_list.png)
+![CLI List](backend/docs/cli_list.png)
 
-![CLI View](docs/cli_view.png)
+![CLI View](backend/docs/cli_view.png)
 
 ## 🌐 REST API Usage
 
@@ -104,7 +104,7 @@ python3 -m encrypted_notes.cli.py view <note-id>
 python3 -m encrypted_notes.api
 ```
 
-![API Showcase](docs/api_showcase.png)
+![API Showcase](backend/docs/api_showcase.png)
 
 ## Security Considerations
 
